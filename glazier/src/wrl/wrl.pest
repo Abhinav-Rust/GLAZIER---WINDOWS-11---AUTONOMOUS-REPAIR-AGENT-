@@ -1,0 +1,49 @@
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT = _{ ("//" ~ (!"\n" ~ ANY)*) | ("/*" ~ (!"*/" ~ ANY)* ~ "*/") }
+
+ident = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+string = ${ "\"" ~ inner_string ~ "\"" }
+inner_string = @{ (!"\"" ~ ANY)* }
+integer = @{ ASCII_DIGIT+ }
+
+program = { SOI ~ block+ ~ EOI }
+
+block = { adhikara | pratyaksha | vyapti | anumana | abhava | virodha | tarka }
+
+adhikara = { "adhikara" ~ ident ~ "{" ~ "target:" ~ component ~ block* ~ "}" }
+
+pratyaksha = { "pratyaksha" ~ "{" ~ "observe:" ~ "[" ~ property_list ~ "]" ~ "via:" ~ "[" ~ via_list ~ "]" ~ "}" }
+property_list = { property ~ ("," ~ property)* }
+via_list = { ident ~ ("," ~ ident)* }
+
+property = { ident ~ ("(" ~ property_arg ~ ("," ~ property_arg)* ~ ")")? }
+property_arg = { (ident ~ ":")? ~ (string | integer | action | ident) }
+
+vyapti = { "vyapti" ~ ident ~ "{" ~ "whenever:" ~ condition_expr ~ "always:" ~ causal_conclusion ~ "witnessed:" ~ "[" ~ ident_list? ~ "]" ~ "confidence:" ~ confidence_level ~ "}" }
+condition_expr = { predicate ~ ( ("AND" | "OR") ~ predicate )* }
+predicate = { temporal_context | state_predicate }
+state_predicate = { property ~ ( "==" ~ ident )? }
+temporal_context = { ident ~ "(" ~ "within:" ~ time_window ~ ")" }
+time_window = @{ ASCII_DIGIT+ ~ ("h" | "m" | "d") }
+causal_conclusion = { "cause(" ~ ident ~ ")" }
+ident_list = { ident ~ ("," ~ ident)* }
+confidence_level = { "established" | "provisional" | "suspected" }
+
+anumana = { "anumana" ~ ident ~ "{" ~ "pratijnha:" ~ ident ~ "hetu:" ~ predicate ~ "udaharana:" ~ ident ~ "upanaya:" ~ ident ~ "nigamana:" ~ action ~ "}" }
+
+abhava = { "abhava" ~ ident ~ "{" ~ "pragabhava:" ~ "->" ~ action ~ "dhvamsabhava:" ~ "->" ~ action_choice ~ "atyantabhava:" ~ "->" ~ action ~ "anyonyabhava:" ~ "->" ~ action ~ "}" }
+action_choice = { action ~ ("|" ~ action)* }
+
+tarka = { "tarka" ~ ident ~ "{" ~ "assume:" ~ causal_conclusion ~ "predict:" ~ ident ~ "test:" ~ action ~ "if_contradicted:" ~ "reject(" ~ ident ~ ")" ~ "->" ~ action ~ "if_confirmed:" ~ "establish(" ~ ident ~ ")" ~ "->" ~ action ~ "}" }
+
+virodha = { "virodha" ~ ident ~ "{" ~ "improving:" ~ ident ~ "degrades:" ~ ident ~ "guna:" ~ guna_type ~ "upaya:" ~ "[" ~ upaya_list ~ "]" ~ ("upeksha_condition:" ~ condition_expr)? ~ ("maya_path:" ~ action)? ~ "}" }
+guna_type = { "tamas" | "rajas" | "sattva" }
+upaya_list = { upaya_item ~ ("," ~ upaya_item)* }
+upaya_item = { upaya_type ~ "->" ~ action }
+upaya_type = { "sama" | "dana" | "bheda" | "danda" }
+
+component = { ident ~ ("(" ~ ident ~ ")")? }
+
+action = { ident ~ ("(" ~ action_args? ~ ")")? }
+action_args = { action_arg ~ ("," ~ action_arg)* }
+action_arg = { action | string | integer }

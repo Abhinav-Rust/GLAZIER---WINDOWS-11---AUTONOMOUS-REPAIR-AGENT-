@@ -1,0 +1,24 @@
+[
+  {
+    "id": "case_seed_001",
+    "timestamp": "2023-10-01T12:00:00Z",
+    "target": "microphone",
+    "symptoms": ["error_code(43)", "windows_updated"],
+    "hypothesis": "driver_version_incompatibility",
+    "actions": ["rollback_driver(realtek_audio)"],
+    "outcome": "Success",
+    "guna_start": "Rajas",
+    "guna_end": "Sattva"
+  },
+  {
+    "id": "case_seed_002",
+    "timestamp": "2023-10-02T12:00:00Z",
+    "target": "microphone",
+    "symptoms": ["service_state(AudioSrv, stopped)"],
+    "hypothesis": "audio_service_not_running",
+    "actions": ["restart_service(AudioSrv)"],
+    "outcome": "Success",
+    "guna_start": "Tamas",
+    "guna_end": "Sattva"
+  }
+]

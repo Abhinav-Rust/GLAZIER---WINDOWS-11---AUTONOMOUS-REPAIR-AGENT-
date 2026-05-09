@@ -1,0 +1,4 @@
+adhikara diagnose_audio_services {
+  target: component(audio_services)
+  // placeholder
+}
