@@ -1,0 +1,4 @@
+adhikara diagnose_realtek {
+  target: component(realtek_driver)
+  // placeholder
+}
