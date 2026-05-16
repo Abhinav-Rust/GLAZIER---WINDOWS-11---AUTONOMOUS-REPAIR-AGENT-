@@ -98,7 +98,17 @@ async fn main() -> Result<()> {
         };
 
         let outcome = karma.execute_action(&action)?;
-        action_logger.log(action, outcome, glazier::wrl::ast::GunaType::Sattva, true);
+
+        let now = chrono::Utc::now();
+        action_logger.log_anumana(
+            "primary_diagnosis",
+            "error_code(43)",
+            &now,
+            "post_update_driver_conflict",
+            &["case_seed_001".to_string()],
+            "rollback_driver(realtek_audio)"
+        );
+        action_logger.log_action(action, outcome, glazier::wrl::ast::GunaType::Sattva, true);
 
         // 6. Response: Fix Verified
         let mut ctx2 = std::collections::HashMap::new();

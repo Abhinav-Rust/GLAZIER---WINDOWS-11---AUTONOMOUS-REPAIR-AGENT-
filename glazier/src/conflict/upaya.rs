@@ -1,16 +1,53 @@
-use crate::wrl::ast::{VirodhaNode, Action, UpayaType};
+use crate::wrl::ast::{VirodhaNode, UpayaType};
+use crate::execution::karma::{KarmaExecutor, ExecutionOutcome};
+use anyhow::Result;
 
 pub struct UpayaResolver;
 
 impl UpayaResolver {
-    pub fn resolve(virodha: &VirodhaNode) -> Vec<Action> {
-        let mut plan = Vec::new();
-        // Order by severity: Sama (Conciliation), Dana (Concession), Bheda (Division), Danda (Force)
-        for expected in [UpayaType::Sama, UpayaType::Dana, UpayaType::Bheda, UpayaType::Danda] {
-            if let Some(item) = virodha.upaya.iter().find(|i| i.upaya_type == expected) {
-                plan.push(item.action.clone());
+    /// Executes the Kauṭilya Caturupāya resolution sequence.
+    /// It must attempt resolution strictly in order: Sāma -> Dāna -> Bheda -> Daṇḍa.
+    /// Reaching Daṇḍa means all gentler approaches have failed.
+    pub fn resolve(
+        virodha: &VirodhaNode,
+        executor: &dyn KarmaExecutor,
+    ) -> Result<ExecutionOutcome> {
+        println!("TRACE [VIRODHA] Commencing Caturupāya resolution sequence for conflict: {}", virodha.name);
+
+        let target_sequence = [UpayaType::Sama, UpayaType::Dana, UpayaType::Bheda, UpayaType::Danda];
+        let mut last_outcome = None;
+
+        for expected_type in target_sequence {
+            if let Some(item) = virodha.upaya.iter().find(|i| i.upaya_type == expected_type) {
+
+                let phase_name = match expected_type {
+                    UpayaType::Sama => "Sāma (Conciliation)",
+                    UpayaType::Dana => "Dāna (Provision/Concession)",
+                    UpayaType::Bheda => "Bheda (Division/Isolation)",
+                    UpayaType::Danda => "Daṇḍa (Force/Override)",
+                };
+
+                println!("  Attempting Upāya Phase: {}", phase_name);
+                println!("  Executing Action: {}", item.action.name);
+
+                let outcome = executor.execute_action(&item.action)?;
+                last_outcome = Some(outcome.clone());
+
+                // If successful, we break the sequence and return.
+                // We do not proceed to harsher measures if gentler ones succeed.
+                if outcome.success {
+                    println!("  Phase {} succeeded. Halting escalation.", phase_name);
+                    return Ok(outcome);
+                } else {
+                    println!("  Phase {} failed. Escalating.", phase_name);
+                }
             }
         }
-        plan
+
+        if let Some(outcome) = last_outcome {
+            Ok(outcome)
+        } else {
+            Err(anyhow::anyhow!("No Upāya actions defined in Virodha block."))
+        }
     }
 }
