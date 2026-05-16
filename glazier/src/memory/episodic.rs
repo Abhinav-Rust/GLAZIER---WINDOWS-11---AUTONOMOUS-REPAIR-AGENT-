@@ -35,8 +35,8 @@ impl EpisodicMemory {
     }
 
     pub async fn init_schema(&self) -> Result<()> {
-        self.db.query("DEFINE TABLE case SCHEMAFULL;").await?;
-        // Other schema statements can be executed here
+        let schema_query = include_str!("schema.surql");
+        self.db.query(schema_query).await?;
         Ok(())
     }
 
