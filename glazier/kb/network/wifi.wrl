@@ -1,0 +1,55 @@
+adhikara diagnose_wifi {
+  target: component(wifi_adapter)
+
+  pratyaksha {
+    observe: [
+      service_state(WlanSvc),
+      event_log(System, source: "WLAN-AutoConfig"),
+      device_manager_status(wifi_adapter),
+      network_state(dns_resolution)
+    ]
+    via: [device_manager, event_log, wmi, powershell]
+  }
+
+  vyapti wlan_service_stopped {
+    whenever: service_state(WlanSvc) == stopped
+    always:   cause(wifi_service_disabled)
+    witnessed: [case_wifi_001]
+    confidence: established
+  }
+
+  vyapti dns_resolution_failure {
+    whenever: network_state(dns_resolution) == failed AND service_state(WlanSvc) == running
+    always:   cause(dns_cache_corruption)
+    witnessed: [case_wifi_002]
+    confidence: provisional
+  }
+
+  anumana wlan_service_diagnosis {
+    pratijnha:  wifi_not_connecting
+    hetu:       service_state(WlanSvc) == stopped
+    udaharana:  wlan_service_stopped
+    upanaya:    current_system_matches_hetu
+    nigamana:   attempt(restart_service(WlanSvc))
+  }
+
+  anumana dns_flush_diagnosis {
+    pratijnha:  wifi_connected_no_internet
+    hetu:       network_state(dns_resolution) == failed
+    udaharana:  dns_resolution_failure
+    upanaya:    current_system_matches_hetu
+    nigamana:   attempt(run_powershell("Clear-DnsClientCache"))
+  }
+
+  virodha adapter_driver_conflict {
+    improving: wifi_adapter
+    degrades:  hyperv_virtual_switch
+    guna:      rajas
+    upaya: [
+      sama  -> restart_adapter,
+      dana  -> update_adapter_driver,
+      bheda -> isolate(hyperv_switch),
+      danda -> network_reset
+    ]
+  }
+}

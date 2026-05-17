@@ -20,5 +20,60 @@
     "outcome": "Success",
     "guna_start": "Tamas",
     "guna_end": "Sattva"
+  },
+  {
+    "id": "case_wifi_001",
+    "timestamp": "2023-10-05T09:30:00Z",
+    "target": "wifi_adapter",
+    "symptoms": ["service_state(WlanSvc, stopped)"],
+    "hypothesis": "wifi_service_disabled",
+    "actions": ["restart_service(WlanSvc)"],
+    "outcome": "Success",
+    "guna_start": "Tamas",
+    "guna_end": "Sattva"
+  },
+  {
+    "id": "case_wifi_002",
+    "timestamp": "2023-10-06T14:15:00Z",
+    "target": "wifi_adapter",
+    "symptoms": ["network_state(dns_resolution, failed)"],
+    "hypothesis": "dns_cache_corruption",
+    "actions": ["run_powershell(Clear-DnsClientCache)"],
+    "outcome": "Success",
+    "guna_start": "Rajas",
+    "guna_end": "Sattva"
+  },
+  {
+    "id": "case_print_001",
+    "timestamp": "2023-10-10T11:00:00Z",
+    "target": "print_spooler",
+    "symptoms": ["service_state(Spooler, stopped)"],
+    "hypothesis": "stuck_print_queue",
+    "actions": ["run_powershell(Clear-PrintQueue)"],
+    "outcome": "Success",
+    "guna_start": "Tamas",
+    "guna_end": "Sattva"
+  },
+  {
+    "id": "case_display_001",
+    "timestamp": "2023-10-15T16:45:00Z",
+    "target": "display_adapter",
+    "symptoms": ["error_code(4101)"],
+    "hypothesis": "timeout_detection_recovery",
+    "actions": ["run_powershell(Set-TdrDelay)"],
+    "outcome": "Success",
+    "guna_start": "Rajas",
+    "guna_end": "Sattva"
+  },
+  {
+    "id": "case_display_002",
+    "timestamp": "2023-10-16T10:20:00Z",
+    "target": "display_adapter",
+    "symptoms": ["error_code(43)"],
+    "hypothesis": "display_driver_corrupted",
+    "actions": ["rollback_driver(display_adapter)"],
+    "outcome": "Success",
+    "guna_start": "Rajas",
+    "guna_end": "Sattva"
   }
 ]

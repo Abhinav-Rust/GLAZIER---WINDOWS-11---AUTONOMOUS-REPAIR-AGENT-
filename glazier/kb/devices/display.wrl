@@ -1,0 +1,41 @@
+adhikara diagnose_display {
+  target: device(display_adapter)
+
+  pratyaksha {
+    observe: [
+      device_manager_status(display_adapter),
+      event_log(System, source: "Display")
+    ]
+    via: [device_manager, event_log]
+  }
+
+  vyapti display_driver_tdr {
+    whenever: event_log(System, source: "Display") AND error_code(4101)
+    always:   cause(timeout_detection_recovery)
+    witnessed: [case_display_001]
+    confidence: established
+  }
+
+  vyapti display_code_43 {
+    whenever: error_code(43)
+    always:   cause(display_driver_corrupted)
+    witnessed: [case_display_002]
+    confidence: provisional
+  }
+
+  anumana handle_tdr_error {
+    pratijnha:  screen_flicker_or_freeze
+    hetu:       error_code(4101)
+    udaharana:  display_driver_tdr
+    upanaya:    current_system_matches_hetu
+    nigamana:   attempt(run_powershell("New-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\GraphicsDrivers' -Name TdrDelay -PropertyType DWord -Value 8 -Force"))
+  }
+
+  tarka hardware_gpu_failure {
+    assume:          cause(gpu_hardware_fault)
+    predict:         artifacts_in_bios
+    test:            query_user("Do you see visual artifacts or lines before Windows loads (in the BIOS/UEFI screen)?")
+    if_contradicted: reject(gpu_hardware_fault) -> attempt(rollback_driver(display_adapter))
+    if_confirmed:    establish(gpu_hardware_fault) -> escalate("Physical GPU failure detected. Replacement required.")
+  }
+}
