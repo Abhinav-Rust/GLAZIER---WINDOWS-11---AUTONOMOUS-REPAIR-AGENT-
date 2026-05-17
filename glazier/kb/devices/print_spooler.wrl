@@ -1,0 +1,34 @@
+adhikara diagnose_printer {
+  target: component(print_spooler)
+
+  pratyaksha {
+    observe: [
+      service_state(Spooler),
+      event_log(System, source: "PrintService"),
+      directory_state("C:\Windows\System32\spool\PRINTERS")
+    ]
+    via: [wmi, event_log, powershell]
+  }
+
+  vyapti print_spooler_crash {
+    whenever: service_state(Spooler) == stopped AND event_log(System, source: "PrintService")
+    always:   cause(stuck_print_queue)
+    witnessed: [case_print_001]
+    confidence: established
+  }
+
+  anumana clear_print_queue {
+    pratijnha:  cannot_print_documents
+    hetu:       service_state(Spooler) == stopped
+    udaharana:  print_spooler_crash
+    upanaya:    current_system_matches_hetu
+    nigamana:   attempt(run_powershell("Remove-Item -Path \"$env:windir\System32\spool\PRINTERS\*.*\" -Force -Recurse; Start-Service -Name Spooler"))
+  }
+
+  abhava printer_driver {
+    pragabhava:   -> install_printer_driver
+    dhvamsabhava: -> reinstall_printer_driver
+    atyantabhava: -> flag_incompatible_printer
+    anyonyabhava: -> redirect(diagnose_usb_port)
+  }
+}
