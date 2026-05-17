@@ -46,14 +46,24 @@ async fn main() -> Result<()> {
     // Load KB
     println!("Loading Knowledge Base...");
     let mut vyapti_store = VyaptiStore::new();
-    if let Ok(program) = KnowledgeBaseLoader::load_file("kb/audio/microphone.wrl") {
-        for block in program.blocks {
-            if let glazier::wrl::ast::Block::Adhikara(adhikara) = block {
-                for child in adhikara.blocks {
-                    if let glazier::wrl::ast::Block::Vyapti(v) = child {
-                        vyapti_store.add_rule(v);
+
+    // Dynamically load all .wrl files in the kb/ directory tree
+    let walker = walkdir::WalkDir::new("kb").into_iter();
+    for entry in walker.filter_map(|e| e.ok()) {
+        if entry.path().extension().and_then(|s| s.to_str()) == Some("wrl") {
+            let path_str = entry.path().to_string_lossy();
+            if let Ok(program) = KnowledgeBaseLoader::load_file(&path_str) {
+                for block in program.blocks {
+                    if let glazier::wrl::ast::Block::Adhikara(adhikara) = block {
+                        for child in adhikara.blocks {
+                            if let glazier::wrl::ast::Block::Vyapti(v) = child {
+                                vyapti_store.add_rule(v);
+                            }
+                        }
                     }
                 }
+            } else {
+                println!("Warning: Failed to parse WRL file: {}", path_str);
             }
         }
     }
