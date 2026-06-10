@@ -1,15 +1,15 @@
 use anyhow::Result;
-use glazier::memory::working::WorkingMemory;
-use glazier::memory::episodic::EpisodicMemory;
-use glazier::nlp::tokeniser::Tokeniser;
-use glazier::nlp::automaton::IntentAutomaton;
-use glazier::nlp::response::{ResponseGenerator, AgentState};
-use glazier::pramana::pratyaksha::{PratyakshaProvider, SandboxMock};
 use glazier::execution::karma::{KarmaExecutor, SandboxMockExecutor};
 use glazier::execution::logger::ActionLogger;
-use glazier::reasoning::vyapti::VyaptiStore;
-use glazier::reasoning::anumana::InferenceEngine;
 use glazier::knowledge::loader::KnowledgeBaseLoader;
+use glazier::memory::episodic::EpisodicMemory;
+use glazier::memory::working::WorkingMemory;
+use glazier::nlp::automaton::IntentAutomaton;
+use glazier::nlp::response::{AgentState, ResponseGenerator};
+use glazier::nlp::tokeniser::Tokeniser;
+use glazier::pramana::pratyaksha::{PratyakshaProvider, SandboxMock};
+use glazier::reasoning::anumana::InferenceEngine;
+use glazier::reasoning::vyapti::VyaptiStore;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -20,7 +20,8 @@ async fn main() -> Result<()> {
     let response_gen = ResponseGenerator::new();
 
     // Memory Setup
-    let db_path = std::env::var("GLAZIER_DB_PATH").unwrap_or_else(|_| "rocksdb://glazier_episodic.db".to_string());
+    let db_path = std::env::var("GLAZIER_DB_PATH")
+        .unwrap_or_else(|_| "rocksdb://glazier_episodic.db".to_string());
     let _episodic = EpisodicMemory::new(&db_path).await?;
     let mut working_memory = WorkingMemory::new();
 
@@ -28,7 +29,9 @@ async fn main() -> Result<()> {
     println!("Initializing Episodic Memory...");
     let _ = _episodic.init_schema().await;
     if let Ok(seeds_json) = std::fs::read_to_string("seeds.json") {
-        if let Ok(seeds) = serde_json::from_str::<Vec<glazier::memory::episodic::EpisodicCase>>(&seeds_json) {
+        if let Ok(seeds) =
+            serde_json::from_str::<Vec<glazier::memory::episodic::EpisodicCase>>(&seeds_json)
+        {
             for case in seeds {
                 let _ = _episodic.store_case(case).await;
             }
@@ -46,6 +49,7 @@ async fn main() -> Result<()> {
     // Load KB
     println!("Loading Knowledge Base...");
     let mut vyapti_store = VyaptiStore::new();
+    let mut anumana_blocks = Vec::new();
 
     // Dynamically load all .wrl files in the kb/ directory tree
     let walker = walkdir::WalkDir::new("kb").into_iter();
@@ -56,8 +60,10 @@ async fn main() -> Result<()> {
                 for block in program.blocks {
                     if let glazier::wrl::ast::Block::Adhikara(adhikara) = block {
                         for child in adhikara.blocks {
-                            if let glazier::wrl::ast::Block::Vyapti(v) = child {
-                                vyapti_store.add_rule(v);
+                            match child {
+                                glazier::wrl::ast::Block::Vyapti(v) => vyapti_store.add_rule(v),
+                                glazier::wrl::ast::Block::Anumana(a) => anumana_blocks.push(a),
+                                _ => {}
                             }
                         }
                     }
@@ -87,44 +93,90 @@ async fn main() -> Result<()> {
         let mut ctx = std::collections::HashMap::new();
         ctx.insert("target", target.as_str());
         ctx.insert("properties", "device state, error codes");
-        println!("Agent: {}", response_gen.generate(AgentState::DiagnosisStarted, ctx));
+        println!(
+            "Agent: {}",
+            response_gen.generate(AgentState::DiagnosisStarted, ctx)
+        );
 
         // 4. Pratyaksha (Observation)
         let obs = pratyaksha.observe_device(&target.to_lowercase())?;
-        working_memory.observations.push(glazier::memory::working::TimestampedObservation {
-            timestamp: chrono::Utc::now(),
-            observation: obs.clone(),
-        });
+        working_memory
+            .observations
+            .push(glazier::memory::working::TimestampedObservation {
+                timestamp: chrono::Utc::now(),
+                observation: obs.clone(),
+            });
         println!("Observed State: {:?}", obs);
 
-        // 5. Reasoning & Execution placeholder (simulating Anumana trigger)
-        // In full integration, the engine would find the matching Anumana from the Adhikara
-        // and invoke inference_engine.execute(anumana, &mut working_memory)
-        println!("\nSimulating Anumana resolution based on observed Error Code 43...");
+        // 5. Reasoning & Execution
+        let mut anumana_resolved = false;
+        println!("\nAttempting Anumana resolution based on observed state...");
+        for anumana in &anumana_blocks {
+            if _inference_engine.execute(anumana, &mut working_memory).is_ok() {
+                println!("Matched Anumana: {}", anumana.name);
 
-        let action = glazier::wrl::ast::Action {
-            name: "rollback_driver".to_string(),
-            args: vec![glazier::wrl::ast::ActionArg::Ident("realtek_audio".to_string())],
-        };
+                let action = anumana.nigamana.clone();
+                let outcome = karma.execute_action(&action)?;
 
-        let outcome = karma.execute_action(&action)?;
+                let now = chrono::Utc::now();
 
-        let now = chrono::Utc::now();
-        action_logger.log_anumana(
-            "primary_diagnosis",
-            "error_code(43)",
-            &now,
-            "post_update_driver_conflict",
-            &["case_seed_001".to_string()],
-            "rollback_driver(realtek_audio)"
-        );
-        action_logger.log_action(action, outcome, glazier::wrl::ast::GunaType::Sattva, true);
+                // Construct string representations for logging
+                let hetu_str = match &anumana.hetu {
+                    glazier::wrl::ast::Predicate::State(s) => {
+                        let mut arg_strs = Vec::new();
+                        for arg in &s.property.args {
+                            match arg {
+                                glazier::wrl::ast::PropertyArg::Integer(i) => arg_strs.push(i.to_string()),
+                                glazier::wrl::ast::PropertyArg::String(st) => arg_strs.push(st.clone()),
+                                glazier::wrl::ast::PropertyArg::Ident(id) => arg_strs.push(id.clone()),
+                                _ => arg_strs.push("?".to_string())
+                            }
+                        }
+                        format!("{}({})", s.property.name, arg_strs.join(", "))
+                    },
+                    _ => "?".to_string()
+                };
 
-        // 6. Response: Fix Verified
-        let mut ctx2 = std::collections::HashMap::new();
-        ctx2.insert("target", target.as_str());
-        ctx2.insert("action", "rollback_driver(realtek_audio)");
-        println!("\nAgent: {}", response_gen.generate(AgentState::FixVerified, ctx2));
+                let action_str = {
+                    let mut arg_strs = Vec::new();
+                    for arg in &action.args {
+                        match arg {
+                            glazier::wrl::ast::ActionArg::Integer(i) => arg_strs.push(i.to_string()),
+                            glazier::wrl::ast::ActionArg::String(st) => arg_strs.push(st.clone()),
+                            glazier::wrl::ast::ActionArg::Ident(id) => arg_strs.push(id.clone()),
+                            _ => arg_strs.push("?".to_string())
+                        }
+                    }
+                    format!("{}({})", action.name, arg_strs.join(", "))
+                };
+
+                action_logger.log_anumana(
+                    &anumana.name,
+                    &hetu_str,
+                    &now,
+                    &anumana.udaharana,
+                    &["case_seed_001".to_string()], // We would properly query EpisodicMemory here in a full implementation
+                    &action_str,
+                );
+                action_logger.log_action(action.clone(), outcome, glazier::wrl::ast::GunaType::Sattva, true);
+
+                // 6. Response: Fix Verified
+                let mut ctx2 = std::collections::HashMap::new();
+                ctx2.insert("target", target.as_str());
+                ctx2.insert("action", action_str.as_str());
+                println!(
+                    "\nAgent: {}",
+                    response_gen.generate(AgentState::FixVerified, ctx2)
+                );
+
+                anumana_resolved = true;
+                break;
+            }
+        }
+
+        if !anumana_resolved {
+            println!("No matching Anumana rule found for the observed state.");
+        }
     }
 
     Ok(())

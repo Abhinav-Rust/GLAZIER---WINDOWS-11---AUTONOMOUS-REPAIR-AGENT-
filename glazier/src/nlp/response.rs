@@ -17,13 +17,35 @@ pub struct ResponseGenerator {
 impl ResponseGenerator {
     pub fn new() -> Self {
         let mut templates = HashMap::new();
-        templates.insert("diagnosis_started".to_string(), "Observing {target}. Checking {properties}.".to_string());
-        templates.insert("hypothesis_formed".to_string(), "Evidence suggests: {cause}. Confidence: {level}. Grounded in: {witnessed_cases}.".to_string());
-        templates.insert("action_taken".to_string(), "Applying: {action}.".to_string());
-        templates.insert("fix_verified".to_string(), "{target} restored to sattva. Fix: {action}.".to_string());
-        templates.insert("hetvabhasa_triggered".to_string(), "Inference halted. Fallacy detected: {type}. Reason: {explanation}.".to_string());
-        templates.insert("unknown_state".to_string(), "No vyapti matches this state: {state}. Describe what you see.".to_string());
-        templates.insert("upeksha_applied".to_string(), "Severity below threshold. Monitoring only.".to_string());
+        templates.insert(
+            "diagnosis_started".to_string(),
+            "Observing {target}. Checking {properties}.".to_string(),
+        );
+        templates.insert(
+            "hypothesis_formed".to_string(),
+            "Evidence suggests: {cause}. Confidence: {level}. Grounded in: {witnessed_cases}."
+                .to_string(),
+        );
+        templates.insert(
+            "action_taken".to_string(),
+            "Applying: {action}.".to_string(),
+        );
+        templates.insert(
+            "fix_verified".to_string(),
+            "{target} restored to sattva. Fix: {action}.".to_string(),
+        );
+        templates.insert(
+            "hetvabhasa_triggered".to_string(),
+            "Inference halted. Fallacy detected: {type}. Reason: {explanation}.".to_string(),
+        );
+        templates.insert(
+            "unknown_state".to_string(),
+            "No vyapti matches this state: {state}. Describe what you see.".to_string(),
+        );
+        templates.insert(
+            "upeksha_applied".to_string(),
+            "Severity below threshold. Monitoring only.".to_string(),
+        );
 
         Self { templates }
     }

@@ -1,10 +1,14 @@
-use anyhow::{Result, anyhow};
 use crate::memory::working::ObservationData;
+use anyhow::Result;
 
 pub trait PratyakshaProvider {
     fn observe_device(&self, device_id: &str) -> Result<ObservationData>;
     fn observe_service(&self, service_name: &str) -> Result<ObservationData>;
-    fn observe_event_log(&self, source: &str, time_window_hours: u32) -> Result<Vec<ObservationData>>;
+    fn observe_event_log(
+        &self,
+        source: &str,
+        time_window_hours: u32,
+    ) -> Result<Vec<ObservationData>>;
     fn observe_wmi(&self, query: &str) -> Result<Vec<ObservationData>>;
 }
 
@@ -22,7 +26,7 @@ impl PratyakshaProvider for SandboxMock {
                 error_code: Some(43),
             })
         } else {
-             Ok(ObservationData::DeviceState {
+            Ok(ObservationData::DeviceState {
                 name: device_id.to_string(),
                 status: "OK".to_string(),
                 error_code: None,
@@ -31,9 +35,12 @@ impl PratyakshaProvider for SandboxMock {
     }
 
     fn observe_service(&self, service_name: &str) -> Result<ObservationData> {
-        println!("TRACE [PRATYAKSHA MOCK] observing service: {}", service_name);
+        println!(
+            "TRACE [PRATYAKSHA MOCK] observing service: {}",
+            service_name
+        );
         if service_name == "AudioSrv" {
-             Ok(ObservationData::ServiceState {
+            Ok(ObservationData::ServiceState {
                 name: service_name.to_string(),
                 status: "stopped".to_string(),
             })
@@ -45,14 +52,21 @@ impl PratyakshaProvider for SandboxMock {
         }
     }
 
-    fn observe_event_log(&self, source: &str, _time_window_hours: u32) -> Result<Vec<ObservationData>> {
-        println!("TRACE [PRATYAKSHA MOCK] observing event log source: {}", source);
+    fn observe_event_log(
+        &self,
+        source: &str,
+        _time_window_hours: u32,
+    ) -> Result<Vec<ObservationData>> {
+        println!(
+            "TRACE [PRATYAKSHA MOCK] observing event log source: {}",
+            source
+        );
         Ok(vec![])
     }
 
     fn observe_wmi(&self, query: &str) -> Result<Vec<ObservationData>> {
-         println!("TRACE [PRATYAKSHA MOCK] observing wmi query: {}", query);
-         Ok(vec![])
+        println!("TRACE [PRATYAKSHA MOCK] observing wmi query: {}", query);
+        Ok(vec![])
     }
 }
 
@@ -63,8 +77,8 @@ pub struct Win32Native;
 impl PratyakshaProvider for Win32Native {
     fn observe_device(&self, device_id: &str) -> Result<ObservationData> {
         // Use WMI Win32_PnPEntity as a proxy for Device Manager state
-        use wmi::{WMIConnection, COMLibrary};
         use serde::Deserialize;
+        use wmi::{COMLibrary, WMIConnection};
 
         #[derive(Deserialize, Debug)]
         #[serde(rename_all = "PascalCase")]
@@ -85,11 +99,14 @@ impl PratyakshaProvider for Win32Native {
         if let Some(device) = results.first() {
             Ok(ObservationData::DeviceState {
                 name: device.name.clone().unwrap_or_else(|| device_id.to_string()),
-                status: device.status.clone().unwrap_or_else(|| "Unknown".to_string()),
+                status: device
+                    .status
+                    .clone()
+                    .unwrap_or_else(|| "Unknown".to_string()),
                 error_code: device.config_manager_error_code.map(|c| c as i64),
             })
         } else {
-             Ok(ObservationData::DeviceState {
+            Ok(ObservationData::DeviceState {
                 name: device_id.to_string(),
                 status: "Missing".to_string(),
                 error_code: None,
@@ -98,8 +115,8 @@ impl PratyakshaProvider for Win32Native {
     }
 
     fn observe_service(&self, service_name: &str) -> Result<ObservationData> {
-        use wmi::{WMIConnection, COMLibrary};
         use serde::Deserialize;
+        use wmi::{COMLibrary, WMIConnection};
 
         #[derive(Deserialize, Debug)]
         #[serde(rename_all = "PascalCase")]
@@ -111,7 +128,10 @@ impl PratyakshaProvider for Win32Native {
         let com_con = COMLibrary::new()?;
         let wmi_con = WMIConnection::new(com_con)?;
 
-        let query = format!("SELECT Name, State FROM Win32_Service WHERE Name = '{}'", service_name);
+        let query = format!(
+            "SELECT Name, State FROM Win32_Service WHERE Name = '{}'",
+            service_name
+        );
         let results: Vec<Win32_Service> = wmi_con.raw_query(&query)?;
 
         if let Some(service) = results.first() {
@@ -124,7 +144,11 @@ impl PratyakshaProvider for Win32Native {
         }
     }
 
-    fn observe_event_log(&self, source: &str, time_window_hours: u32) -> Result<Vec<ObservationData>> {
+    fn observe_event_log(
+        &self,
+        source: &str,
+        time_window_hours: u32,
+    ) -> Result<Vec<ObservationData>> {
         // Querying Windows Event Log via PowerShell as a reliable cross-version mechanism
         use std::process::Command;
 
@@ -151,16 +175,16 @@ impl PratyakshaProvider for Win32Native {
 
     fn observe_wmi(&self, query: &str) -> Result<Vec<ObservationData>> {
         // Generic WMI query endpoint (simplified)
-         use wmi::{WMIConnection, COMLibrary};
-         use std::collections::HashMap;
+        use std::collections::HashMap;
+        use wmi::{COMLibrary, WMIConnection};
 
-         let com_con = COMLibrary::new()?;
-         let wmi_con = WMIConnection::new(com_con)?;
+        let com_con = COMLibrary::new()?;
+        let wmi_con = WMIConnection::new(com_con)?;
 
-         // Generic raw query returning HashMaps
-         let _results: Vec<HashMap<String, wmi::Variant>> = wmi_con.raw_query(query)?;
+        // Generic raw query returning HashMaps
+        let _results: Vec<HashMap<String, wmi::Variant>> = wmi_con.raw_query(query)?;
 
-         // For demonstration, map generic success to an empty list rather than full Variant parsing
-         Ok(vec![])
+        // For demonstration, map generic success to an empty list rather than full Variant parsing
+        Ok(vec![])
     }
 }

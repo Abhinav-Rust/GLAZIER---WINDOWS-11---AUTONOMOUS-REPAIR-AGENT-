@@ -5,15 +5,15 @@ use serde::{Deserialize, Serialize};
 /// Dravya (Substance) - the fundamental entities
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Dravya {
-    HardwareDevice(String), // e.g., Microphone
+    HardwareDevice(String),    // e.g., Microphone
     SoftwareComponent(String), // e.g., AudioSrv
-    SystemResource(String), // e.g., RegistryKey
+    SystemResource(String),    // e.g., RegistryKey
 }
 
 /// Guna (Quality) - attributes or states of substances
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum GunaAttribute {
-    State(String), // e.g., "stopped", "running"
+    State(String),  // e.g., "stopped", "running"
     ErrorCode(i64), // e.g., 43
     Version(String),
 }

@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use crate::wrl::ast::VyaptiNode;
+use std::collections::HashMap;
 
 pub struct VyaptiStore {
     rules: HashMap<String, VyaptiNode>,

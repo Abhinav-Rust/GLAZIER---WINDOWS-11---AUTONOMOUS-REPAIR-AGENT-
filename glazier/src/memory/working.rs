@@ -19,9 +19,19 @@ pub struct TimestampedObservation {
 
 #[derive(Debug, Clone)]
 pub enum ObservationData {
-    DeviceState { name: String, status: String, error_code: Option<i64> },
-    ServiceState { name: String, status: String },
-    EventLog { source: String, event_id: u32 },
+    DeviceState {
+        name: String,
+        status: String,
+        error_code: Option<i64>,
+    },
+    ServiceState {
+        name: String,
+        status: String,
+    },
+    EventLog {
+        source: String,
+        event_id: u32,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq)]

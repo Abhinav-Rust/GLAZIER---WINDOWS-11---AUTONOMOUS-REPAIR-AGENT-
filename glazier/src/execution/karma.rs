@@ -1,5 +1,5 @@
-use anyhow::{Result, anyhow};
 use crate::wrl::ast::Action;
+use anyhow::Result;
 
 pub trait KarmaExecutor {
     fn execute_action(&self, action: &Action) -> Result<ExecutionOutcome>;
@@ -44,7 +44,10 @@ impl KarmaExecutor for Win32NativeExecutor {
             "run_powershell" => self.handle_powershell(action),
             // Driver actions generally require SetupAPI via C++ or complex PowerShell invoking PnPUtil
             "rollback_driver" => self.handle_pnputil(action, "rollback"),
-            _ => Err(anyhow!("Action '{}' is not implemented in Win32NativeExecutor", action.name)),
+            _ => Err(anyhow!(
+                "Action '{}' is not implemented in Win32NativeExecutor",
+                action.name
+            )),
         }
     }
 }
@@ -65,13 +68,21 @@ impl Win32NativeExecutor {
         };
 
         let output = Command::new("powershell")
-            .args(&["-NoProfile", "-Command", &format!("{} -Name '{}' -Force", ps_cmd, service_name)])
+            .args(&[
+                "-NoProfile",
+                "-Command",
+                &format!("{} -Name '{}' -Force", ps_cmd, service_name),
+            ])
             .output()?;
 
         Ok(ExecutionOutcome {
             success: output.status.success(),
             before_state: "Unknown".to_string(), // In production, we'd query state before executing
-            after_state: if output.status.success() { "Success".to_string() } else { "Failed".to_string() },
+            after_state: if output.status.success() {
+                "Success".to_string()
+            } else {
+                "Failed".to_string()
+            },
             output: String::from_utf8_lossy(&output.stdout).to_string(),
         })
     }
@@ -101,42 +112,48 @@ impl Win32NativeExecutor {
     }
 
     fn handle_registry_delete(&self, action: &Action) -> Result<ExecutionOutcome> {
-         // Using winreg crate to delete a key
-         // Arguments expected: Hive (e.g., HKLM), Path
-         use winreg::enums::*;
-         use winreg::RegKey;
+        // Using winreg crate to delete a key
+        // Arguments expected: Hive (e.g., HKLM), Path
+        use winreg::enums::*;
+        use winreg::RegKey;
 
-         if action.args.len() < 2 {
-             return Err(anyhow!("delete_registry_key requires hive and path arguments."));
-         }
+        if action.args.len() < 2 {
+            return Err(anyhow!(
+                "delete_registry_key requires hive and path arguments."
+            ));
+        }
 
-         let hive_str = match &action.args[0] {
-             crate::wrl::ast::ActionArg::Ident(i) => i.as_str(),
-             _ => return Err(anyhow!("Invalid hive argument type.")),
-         };
+        let hive_str = match &action.args[0] {
+            crate::wrl::ast::ActionArg::Ident(i) => i.as_str(),
+            _ => return Err(anyhow!("Invalid hive argument type.")),
+        };
 
-         let path = match &action.args[1] {
-             crate::wrl::ast::ActionArg::String(s) => s.clone(),
-             _ => return Err(anyhow!("Invalid path argument type.")),
-         };
+        let path = match &action.args[1] {
+            crate::wrl::ast::ActionArg::String(s) => s.clone(),
+            _ => return Err(anyhow!("Invalid path argument type.")),
+        };
 
-         let hive = match hive_str {
-             "HKLM" => RegKey::predef(HKEY_LOCAL_MACHINE),
-             "HKCU" => RegKey::predef(HKEY_CURRENT_USER),
-             _ => return Err(anyhow!("Unsupported registry hive: {}", hive_str)),
-         };
+        let hive = match hive_str {
+            "HKLM" => RegKey::predef(HKEY_LOCAL_MACHINE),
+            "HKCU" => RegKey::predef(HKEY_CURRENT_USER),
+            _ => return Err(anyhow!("Unsupported registry hive: {}", hive_str)),
+        };
 
-         let result = hive.delete_subkey_all(&path);
+        let result = hive.delete_subkey_all(&path);
 
-         Ok(ExecutionOutcome {
-             success: result.is_ok(),
-             before_state: "Key exists".to_string(),
-             after_state: if result.is_ok() { "Key deleted".to_string() } else { "Deletion failed".to_string() },
-             output: match result {
-                 Ok(_) => "Success".to_string(),
-                 Err(e) => format!("Error: {}", e),
-             },
-         })
+        Ok(ExecutionOutcome {
+            success: result.is_ok(),
+            before_state: "Key exists".to_string(),
+            after_state: if result.is_ok() {
+                "Key deleted".to_string()
+            } else {
+                "Deletion failed".to_string()
+            },
+            output: match result {
+                Ok(_) => "Success".to_string(),
+                Err(e) => format!("Error: {}", e),
+            },
+        })
     }
 
     fn handle_pnputil(&self, action: &Action, operation: &str) -> Result<ExecutionOutcome> {
@@ -145,7 +162,11 @@ impl Win32NativeExecutor {
         use std::process::Command;
 
         let output = Command::new("powershell")
-            .args(&["-NoProfile", "-Command", &format!("Write-Host 'Simulated {} via PnPUtil'", operation)])
+            .args(&[
+                "-NoProfile",
+                "-Command",
+                &format!("Write-Host 'Simulated {} via PnPUtil'", operation),
+            ])
             .output()?;
 
         Ok(ExecutionOutcome {

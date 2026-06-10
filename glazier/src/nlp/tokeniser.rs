@@ -19,18 +19,39 @@ impl Tokeniser {
     pub fn new() -> Self {
         let mut trie = OrderedTrie::new();
         // Seed patterns
-        trie.insert("microphone", SemanticToken::Device("Microphone".to_string()));
+        trie.insert(
+            "microphone",
+            SemanticToken::Device("Microphone".to_string()),
+        );
         trie.insert("mic", SemanticToken::Device("Microphone".to_string()));
-        trie.insert("audio input", SemanticToken::Device("Microphone".to_string()));
+        trie.insert(
+            "audio input",
+            SemanticToken::Device("Microphone".to_string()),
+        );
 
-        trie.insert("not working", SemanticToken::Symptom("NotFunctioning".to_string()));
-        trie.insert("doesn't work", SemanticToken::Symptom("NotFunctioning".to_string()));
-        trie.insert("stopped working", SemanticToken::Symptom("NotFunctioning".to_string()));
+        trie.insert(
+            "not working",
+            SemanticToken::Symptom("NotFunctioning".to_string()),
+        );
+        trie.insert(
+            "doesn't work",
+            SemanticToken::Symptom("NotFunctioning".to_string()),
+        );
+        trie.insert(
+            "stopped working",
+            SemanticToken::Symptom("NotFunctioning".to_string()),
+        );
 
-        trie.insert("yellow bang", SemanticToken::State("ErrorFlagged".to_string()));
+        trie.insert(
+            "yellow bang",
+            SemanticToken::State("ErrorFlagged".to_string()),
+        );
         trie.insert("error code 43", SemanticToken::ErrorCode(43));
 
-        trie.insert("after update", SemanticToken::Context("PostWindowsUpdate".to_string()));
+        trie.insert(
+            "after update",
+            SemanticToken::Context("PostWindowsUpdate".to_string()),
+        );
 
         trie.insert("fix", SemanticToken::Intent("Repair".to_string()));
         trie.insert("diagnose", SemanticToken::Intent("Diagnose".to_string()));
