@@ -1,7 +1,7 @@
-use surrealdb::engine::local::{Db, RocksDb};
-use surrealdb::Surreal;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use surrealdb::engine::local::{Db, RocksDb};
+use surrealdb::Surreal;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EpisodicCase {
@@ -41,7 +41,9 @@ impl EpisodicMemory {
     }
 
     pub async fn store_case(&self, case: EpisodicCase) -> Result<()> {
-        let _created: Option<EpisodicCase> = self.db.create(("case", case.id.clone()))
+        let _created: Option<EpisodicCase> = self
+            .db
+            .create(("case", case.id.clone()))
             .content(case)
             .await?;
         Ok(())

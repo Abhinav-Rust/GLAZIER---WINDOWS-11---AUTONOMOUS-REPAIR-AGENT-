@@ -1,5 +1,5 @@
-use crate::wrl::ast::{VirodhaNode, UpayaType};
-use crate::execution::karma::{KarmaExecutor, ExecutionOutcome};
+use crate::execution::karma::{ExecutionOutcome, KarmaExecutor};
+use crate::wrl::ast::{UpayaType, VirodhaNode};
 use anyhow::Result;
 
 pub struct UpayaResolver;
@@ -12,14 +12,21 @@ impl UpayaResolver {
         virodha: &VirodhaNode,
         executor: &dyn KarmaExecutor,
     ) -> Result<ExecutionOutcome> {
-        println!("TRACE [VIRODHA] Commencing Caturupāya resolution sequence for conflict: {}", virodha.name);
+        println!(
+            "TRACE [VIRODHA] Commencing Caturupāya resolution sequence for conflict: {}",
+            virodha.name
+        );
 
-        let target_sequence = [UpayaType::Sama, UpayaType::Dana, UpayaType::Bheda, UpayaType::Danda];
+        let target_sequence = [
+            UpayaType::Sama,
+            UpayaType::Dana,
+            UpayaType::Bheda,
+            UpayaType::Danda,
+        ];
         let mut last_outcome = None;
 
         for expected_type in target_sequence {
             if let Some(item) = virodha.upaya.iter().find(|i| i.upaya_type == expected_type) {
-
                 let phase_name = match expected_type {
                     UpayaType::Sama => "Sāma (Conciliation)",
                     UpayaType::Dana => "Dāna (Provision/Concession)",
@@ -47,7 +54,9 @@ impl UpayaResolver {
         if let Some(outcome) = last_outcome {
             Ok(outcome)
         } else {
-            Err(anyhow::anyhow!("No Upāya actions defined in Virodha block."))
+            Err(anyhow::anyhow!(
+                "No Upāya actions defined in Virodha block."
+            ))
         }
     }
 }

@@ -21,7 +21,9 @@ pub struct OrderedTrie<T: Clone> {
 
 impl<T: Clone> OrderedTrie<T> {
     pub fn new() -> Self {
-        Self { root: TrieNode::new() }
+        Self {
+            root: TrieNode::new(),
+        }
     }
 
     pub fn insert(&mut self, key: &str, value: T) {

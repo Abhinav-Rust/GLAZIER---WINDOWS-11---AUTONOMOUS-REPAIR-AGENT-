@@ -2,11 +2,11 @@ use super::ast::*;
 
 #[derive(Debug, PartialEq)]
 pub enum HetvabhasaType {
-    Asiddha,      // hetu not confirmed by pratyaksha
-    Viruddha,     // hetu contradicts nigamana
-    Anaikantika,  // hetu matches multiple vyaptis
-    Katatita,     // observation timestamp > staleness_threshold
-    Prakaranasama,// nigamana references its own hetu
+    Asiddha,       // hetu not confirmed by pratyaksha
+    Viruddha,      // hetu contradicts nigamana
+    Anaikantika,   // hetu matches multiple vyaptis
+    Katatita,      // observation timestamp > staleness_threshold
+    Prakaranasama, // nigamana references its own hetu
 }
 
 #[derive(Debug)]
@@ -31,7 +31,10 @@ impl Validator {
                 return Err(HetvabhasaError {
                     anumana_name: anumana.name.clone(),
                     fallacy_type: HetvabhasaType::Prakaranasama,
-                    explanation: format!("Nigamana action '{}' references its own hetu property.", anumana.nigamana.name),
+                    explanation: format!(
+                        "Nigamana action '{}' references its own hetu property.",
+                        anumana.nigamana.name
+                    ),
                 });
             }
         }

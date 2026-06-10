@@ -1,6 +1,6 @@
-use pest::Parser;
+use anyhow::{anyhow, Result};
 use pest::iterators::Pair;
-use anyhow::{Result, anyhow};
+use pest::Parser;
 
 use super::ast::*;
 
@@ -50,7 +50,11 @@ fn parse_adhikara(pair: Pair<Rule>) -> Result<AdhikaraNode> {
         }
     }
 
-    Ok(AdhikaraNode { name, target, blocks })
+    Ok(AdhikaraNode {
+        name,
+        target,
+        blocks,
+    })
 }
 
 fn parse_component(pair: Pair<Rule>) -> Result<Component> {
@@ -105,7 +109,9 @@ fn parse_property_arg(pair: Pair<Rule>) -> Result<PropertyArg> {
 
 fn parse_property_val(pair: Pair<Rule>) -> Result<PropertyArg> {
     match pair.as_rule() {
-        Rule::string => Ok(PropertyArg::String(pair.into_inner().next().unwrap().as_str().to_string())),
+        Rule::string => Ok(PropertyArg::String(
+            pair.into_inner().next().unwrap().as_str().to_string(),
+        )),
         Rule::integer => Ok(PropertyArg::Integer(pair.as_str().parse()?)),
         Rule::action => Ok(PropertyArg::Action(Box::new(parse_action(pair)?))),
         Rule::ident => Ok(PropertyArg::Ident(pair.as_str().to_string())),
@@ -117,7 +123,14 @@ fn parse_vyapti(pair: Pair<Rule>) -> Result<VyaptiNode> {
     let mut inner = pair.into_inner();
     let name = inner.next().unwrap().as_str().to_string();
     let condition_expr = inner.next().unwrap();
-    let causal_conclusion = inner.next().unwrap().into_inner().next().unwrap().as_str().to_string();
+    let causal_conclusion = inner
+        .next()
+        .unwrap()
+        .into_inner()
+        .next()
+        .unwrap()
+        .as_str()
+        .to_string();
 
     let mut witnessed = Vec::new();
     let next = inner.next().unwrap();
@@ -186,14 +199,17 @@ fn parse_predicate(pair: Pair<Rule>) -> Result<Predicate> {
             let mut i = inner.into_inner();
             let property = parse_property(i.next().unwrap())?;
             let expected_state = i.next().map(|p| p.as_str().to_string());
-            Ok(Predicate::State(StatePredicate { property, expected_state }))
-        },
+            Ok(Predicate::State(StatePredicate {
+                property,
+                expected_state,
+            }))
+        }
         Rule::temporal_context => {
             let mut i = inner.into_inner();
             let event = i.next().unwrap().as_str().to_string();
             let within = i.next().unwrap().as_str().to_string();
             Ok(Predicate::Temporal(TemporalContext { event, within }))
-        },
+        }
         _ => Err(anyhow!("Unexpected predicate rule {:?}", inner.as_rule())),
     }
 }
@@ -207,7 +223,14 @@ fn parse_anumana(pair: Pair<Rule>) -> Result<AnumanaNode> {
     let upanaya = inner.next().unwrap().as_str().to_string();
     let nigamana = parse_action(inner.next().unwrap())?;
 
-    Ok(AnumanaNode { name, pratijnha, hetu, udaharana, upanaya, nigamana })
+    Ok(AnumanaNode {
+        name,
+        pratijnha,
+        hetu,
+        udaharana,
+        upanaya,
+        nigamana,
+    })
 }
 
 fn parse_action(pair: Pair<Rule>) -> Result<Action> {
@@ -228,7 +251,9 @@ fn parse_action_arg(pair: Pair<Rule>) -> Result<ActionArg> {
     let inner = pair.into_inner().next().unwrap();
     match inner.as_rule() {
         Rule::action => Ok(ActionArg::Action(Box::new(parse_action(inner)?))),
-        Rule::string => Ok(ActionArg::String(inner.into_inner().next().unwrap().as_str().to_string())),
+        Rule::string => Ok(ActionArg::String(
+            inner.into_inner().next().unwrap().as_str().to_string(),
+        )),
         Rule::integer => Ok(ActionArg::Integer(inner.as_str().parse()?)),
         Rule::ident => Ok(ActionArg::Ident(inner.as_str().to_string())),
         _ => Err(anyhow!("Unexpected action arg {:?}", inner.as_rule())),
@@ -248,13 +273,26 @@ fn parse_abhava(pair: Pair<Rule>) -> Result<AbhavaNode> {
     let atyantabhava = parse_action(inner.next().unwrap())?;
     let anyonyabhava = parse_action(inner.next().unwrap())?;
 
-    Ok(AbhavaNode { name, pragabhava, dhvamsabhava, atyantabhava, anyonyabhava })
+    Ok(AbhavaNode {
+        name,
+        pragabhava,
+        dhvamsabhava,
+        atyantabhava,
+        anyonyabhava,
+    })
 }
 
 fn parse_tarka(pair: Pair<Rule>) -> Result<TarkaNode> {
     let mut inner = pair.into_inner();
     let name = inner.next().unwrap().as_str().to_string();
-    let assume = inner.next().unwrap().into_inner().next().unwrap().as_str().to_string();
+    let assume = inner
+        .next()
+        .unwrap()
+        .into_inner()
+        .next()
+        .unwrap()
+        .as_str()
+        .to_string();
     let predict = inner.next().unwrap().as_str().to_string();
     let test = parse_action(inner.next().unwrap())?;
     let if_contradicted_reject = inner.next().unwrap().as_str().to_string();
@@ -263,9 +301,14 @@ fn parse_tarka(pair: Pair<Rule>) -> Result<TarkaNode> {
     let if_confirmed_action = parse_action(inner.next().unwrap())?;
 
     Ok(TarkaNode {
-        name, assume, predict, test,
-        if_contradicted_reject, if_contradicted_action,
-        if_confirmed_establish, if_confirmed_action
+        name,
+        assume,
+        predict,
+        test,
+        if_contradicted_reject,
+        if_contradicted_action,
+        if_confirmed_establish,
+        if_confirmed_action,
     })
 }
 
@@ -276,7 +319,11 @@ fn parse_virodha(pair: Pair<Rule>) -> Result<VirodhaNode> {
     let degrades = inner.next().unwrap().as_str().to_string();
 
     let guna_pair = inner.next().unwrap();
-    let guna_str = if let Some(g) = guna_pair.clone().into_inner().next() { g.as_str() } else { guna_pair.as_str() };
+    let guna_str = if let Some(g) = guna_pair.clone().into_inner().next() {
+        g.as_str()
+    } else {
+        guna_pair.as_str()
+    };
     let guna = match guna_str {
         "tamas" => GunaType::Tamas,
         "rajas" => GunaType::Rajas,
@@ -288,7 +335,11 @@ fn parse_virodha(pair: Pair<Rule>) -> Result<VirodhaNode> {
     for p in inner.next().unwrap().into_inner() {
         let mut i = p.into_inner();
         let utype_pair = i.next().unwrap();
-        let utype_str = if let Some(u) = utype_pair.clone().into_inner().next() { u.as_str() } else { utype_pair.as_str() };
+        let utype_str = if let Some(u) = utype_pair.clone().into_inner().next() {
+            u.as_str()
+        } else {
+            utype_pair.as_str()
+        };
         let upaya_type = match utype_str {
             "sama" => UpayaType::Sama,
             "dana" => UpayaType::Dana,
@@ -312,6 +363,12 @@ fn parse_virodha(pair: Pair<Rule>) -> Result<VirodhaNode> {
     }
 
     Ok(VirodhaNode {
-        name, improving, degrades, guna, upaya, upeksha_condition, maya_path
+        name,
+        improving,
+        degrades,
+        guna,
+        upaya,
+        upeksha_condition,
+        maya_path,
     })
 }

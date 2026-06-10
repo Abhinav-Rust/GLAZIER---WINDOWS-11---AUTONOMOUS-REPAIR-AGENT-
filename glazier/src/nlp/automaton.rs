@@ -88,16 +88,24 @@ impl IntentAutomaton {
 
                 // Keep absorbing missing parts if we hit complete early but get more info
                 (NfaState::Complete, SemanticToken::Device(d)) => {
-                    if resolved.target.is_none() { resolved.target = Some(d.clone()); }
+                    if resolved.target.is_none() {
+                        resolved.target = Some(d.clone());
+                    }
                 }
                 (NfaState::Complete, SemanticToken::Symptom(s)) => {
-                     if resolved.symptom.is_none() { resolved.symptom = Some(s.clone()); }
+                    if resolved.symptom.is_none() {
+                        resolved.symptom = Some(s.clone());
+                    }
                 }
                 (NfaState::Complete, SemanticToken::ErrorCode(c)) => {
-                     if resolved.symptom.is_none() { resolved.symptom = Some(format!("ErrorCode({})", c)); }
+                    if resolved.symptom.is_none() {
+                        resolved.symptom = Some(format!("ErrorCode({})", c));
+                    }
                 }
                 (NfaState::Complete, SemanticToken::Context(c)) => {
-                     if resolved.context.is_none() { resolved.context = Some(c.clone()); }
+                    if resolved.context.is_none() {
+                        resolved.context = Some(c.clone());
+                    }
                 }
 
                 // Absorb context at any non-start state without changing state

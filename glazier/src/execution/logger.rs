@@ -1,5 +1,5 @@
-use crate::wrl::ast::Action;
 use crate::execution::karma::ExecutionOutcome;
+use crate::wrl::ast::Action;
 use chrono::Utc;
 
 pub struct ActionLogEntry {
@@ -33,7 +33,11 @@ impl ActionLogger {
 
         println!("ANUMANA [{}]", anumana_name);
         println!("  pramana_source:   [PRATYAKSHA]");
-        println!("  hetu:             {} observed at [{}]", hetu_str, timestamp.to_rfc3339());
+        println!(
+            "  hetu:             {} observed at [{}]",
+            hetu_str,
+            timestamp.to_rfc3339()
+        );
         println!("  vyapti:           [SHABDA] {}", vyapti_name);
         println!("  witnessed:        [UPAMANA] [{}]", witnessed_str);
         println!("  hetvabhasa_check: PASSED");
@@ -42,7 +46,13 @@ impl ActionLogger {
     }
 
     /// Logs an action execution per the exact auditable trace standard.
-    pub fn log_action(&mut self, action: Action, outcome: ExecutionOutcome, guna: crate::wrl::ast::GunaType, rollback: bool) {
+    pub fn log_action(
+        &mut self,
+        action: Action,
+        outcome: ExecutionOutcome,
+        guna: crate::wrl::ast::GunaType,
+        rollback: bool,
+    ) {
         let entry = ActionLogEntry {
             timestamp: Utc::now(),
             action: action.clone(),
@@ -63,7 +73,10 @@ impl ActionLogger {
         println!("  action_taken:     {}", action.name); // Could expand to show args
         println!("  after_state:      {}", outcome.after_state);
         println!("  guna_end:         {}", guna_str);
-        println!("  rollback_stored:  {}", if rollback { "yes" } else { "no" });
+        println!(
+            "  rollback_stored:  {}",
+            if rollback { "yes" } else { "no" }
+        );
         println!();
 
         self.logs.push(entry);

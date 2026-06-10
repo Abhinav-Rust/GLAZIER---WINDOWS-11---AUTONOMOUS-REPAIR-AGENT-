@@ -1,4 +1,4 @@
-use crate::wrl::ast::{TarkaNode, Action};
+use crate::wrl::ast::{Action, TarkaNode};
 
 pub enum TarkaTestResult {
     Confirmed,
@@ -17,13 +17,19 @@ impl TarkaHypothesisLoop {
 
         match test_result {
             TarkaTestResult::Confirmed => {
-                println!("TRACE [TARKA] Test Confirmed. Establishing: {}. Routing to next action.", node.if_confirmed_establish);
+                println!(
+                    "TRACE [TARKA] Test Confirmed. Establishing: {}. Routing to next action.",
+                    node.if_confirmed_establish
+                );
                 node.if_confirmed_action.clone()
-            },
+            }
             TarkaTestResult::Contradicted => {
-                println!("TRACE [TARKA] Test Contradicted. Rejecting: {}. Routing to alternative path.", node.if_contradicted_reject);
+                println!(
+                    "TRACE [TARKA] Test Contradicted. Rejecting: {}. Routing to alternative path.",
+                    node.if_contradicted_reject
+                );
                 node.if_contradicted_action.clone()
-            },
+            }
         }
     }
 }

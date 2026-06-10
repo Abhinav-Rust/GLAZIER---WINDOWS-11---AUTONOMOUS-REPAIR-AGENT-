@@ -54,7 +54,7 @@ pub enum PropertyArg {
 pub struct VyaptiNode {
     pub name: String,
     pub whenever: Vec<(ConditionOp, Predicate)>, // first op is None essentially (default AND)
-    pub always: String, // cause
+    pub always: String,                          // cause
     pub witnessed: Vec<String>,
     pub confidence: Confidence,
 }
