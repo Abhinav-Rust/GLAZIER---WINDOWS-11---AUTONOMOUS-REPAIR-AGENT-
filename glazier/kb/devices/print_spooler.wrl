@@ -22,7 +22,7 @@ adhikara diagnose_printer {
     hetu:       service_state(Spooler) == stopped
     udaharana:  print_spooler_crash
     upanaya:    current_system_matches_hetu
-    nigamana:   attempt(run_powershell("Remove-Item -Path \"$env:windir\System32\spool\PRINTERS\*.*\" -Force -Recurse; Start-Service -Name Spooler"))
+    nigamana:   run_powershell("clear_printers_and_restart")
   }
 
   abhava printer_driver {
