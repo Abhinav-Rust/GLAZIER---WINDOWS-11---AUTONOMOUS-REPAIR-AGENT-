@@ -1,0 +1,34 @@
+adhikara diagnose_bluetooth {
+  target: device(bluetooth_adapter)
+
+  pratyaksha {
+    observe: [
+      service_state(bthserv),
+      driver_state(bluetooth_driver),
+      device_manager_status(bluetooth_adapter)
+    ]
+    via: [device_manager, wmi, service_manager]
+  }
+
+  vyapti bluetooth_service_stopped {
+    whenever: service_state(bthserv) == stopped
+    always:   cause(bluetooth_service_down)
+    witnessed: [case_bt_001]
+    confidence: established
+  }
+
+  anumana service_diagnosis {
+    pratijnha:  bluetooth_not_working
+    hetu:       service_state(bthserv) == stopped
+    udaharana:  bluetooth_service_stopped
+    upanaya:    current_system_matches_hetu
+    nigamana:   restart_service(bthserv)
+  }
+
+  abhava bluetooth_driver {
+    pragabhava:   -> install_driver(bluetooth_driver)
+    dhvamsabhava: -> reinstall_driver(bluetooth_driver)
+    atyantabhava: -> enable_usb_dongle
+    anyonyabhava: -> redirect(diagnose_audio_service)
+  }
+}

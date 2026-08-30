@@ -53,4 +53,14 @@ impl EpisodicMemory {
         let case: Option<EpisodicCase> = self.db.select(("case", id)).await?;
         Ok(case)
     }
+
+    pub async fn find_cases_by_target(&self, target: &str) -> Result<Vec<EpisodicCase>> {
+        let mut response = self
+            .db
+            .query("SELECT * FROM case WHERE string::lowercase(target) = string::lowercase($target)")
+            .bind(("target", target.to_string()))
+            .await?;
+        let cases: Vec<EpisodicCase> = response.take(0)?;
+        Ok(cases)
+    }
 }

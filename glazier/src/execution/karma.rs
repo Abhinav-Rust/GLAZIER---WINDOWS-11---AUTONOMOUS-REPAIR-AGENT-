@@ -1,5 +1,7 @@
 use crate::wrl::ast::Action;
 use anyhow::Result;
+#[cfg(target_os = "windows")]
+use anyhow::anyhow;
 
 pub trait KarmaExecutor {
     fn execute_action(&self, action: &Action) -> Result<ExecutionOutcome>;

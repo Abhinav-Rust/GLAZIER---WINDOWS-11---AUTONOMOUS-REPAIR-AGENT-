@@ -22,18 +22,18 @@ async fn main() -> Result<()> {
     // Memory Setup
     let db_path = std::env::var("GLAZIER_DB_PATH")
         .unwrap_or_else(|_| "rocksdb://glazier_episodic.db".to_string());
-    let _episodic = EpisodicMemory::new(&db_path).await?;
+    let episodic = EpisodicMemory::new(&db_path).await?;
     let mut working_memory = WorkingMemory::new();
 
     // Initialize Episodic Memory with Seeds
     println!("Initializing Episodic Memory...");
-    let _ = _episodic.init_schema().await;
+    let _ = episodic.init_schema().await;
     if let Ok(seeds_json) = std::fs::read_to_string("seeds.json") {
         if let Ok(seeds) =
             serde_json::from_str::<Vec<glazier::memory::episodic::EpisodicCase>>(&seeds_json)
         {
             for case in seeds {
-                let _ = _episodic.store_case(case).await;
+                let _ = episodic.store_case(case).await;
             }
             println!("Seeds loaded successfully.");
         }
@@ -50,6 +50,7 @@ async fn main() -> Result<()> {
     println!("Loading Knowledge Base...");
     let mut vyapti_store = VyaptiStore::new();
     let mut anumana_blocks = Vec::new();
+        let mut virodha_blocks = Vec::new();
 
     // Dynamically load all .wrl files in the kb/ directory tree
     let walker = walkdir::WalkDir::new("kb").into_iter();
@@ -63,6 +64,7 @@ async fn main() -> Result<()> {
                             match child {
                                 glazier::wrl::ast::Block::Vyapti(v) => vyapti_store.add_rule(v),
                                 glazier::wrl::ast::Block::Anumana(a) => anumana_blocks.push(a),
+                                    glazier::wrl::ast::Block::Virodha(v) => virodha_blocks.push(v),
                                 _ => {}
                             }
                         }
@@ -107,6 +109,23 @@ async fn main() -> Result<()> {
                 observation: obs.clone(),
             });
         println!("Observed State: {:?}", obs);
+
+        // Classify initial system Guṇa state
+        let current_guna = glazier::conflict::guna::GunaClassifier::classify_state(&working_memory.observations);
+        println!("Initial System State Guṇa: {:?}", current_guna);
+
+        // Upamana Case Matching
+        let symptoms = intent.symptom.iter().cloned().collect::<Vec<_>>();
+        let matched_case = glazier::pramana::upamana::UpamanaMatcher::match_similar_case(
+            &episodic,
+            target,
+            &symptoms,
+        ).await.unwrap_or(None);
+        let witness_cases = if let Some(c) = matched_case {
+            vec![c.id]
+        } else {
+            vec!["case_seed_001".to_string()]
+        };
 
         // 5. Reasoning & Execution
         let mut anumana_resolved = false;
@@ -155,7 +174,7 @@ async fn main() -> Result<()> {
                     &hetu_str,
                     &now,
                     &anumana.udaharana,
-                    &["case_seed_001".to_string()], // We would properly query EpisodicMemory here in a full implementation
+                    &witness_cases,
                     &action_str,
                 );
                 action_logger.log_action(action.clone(), outcome, glazier::wrl::ast::GunaType::Sattva, true);
@@ -176,6 +195,11 @@ async fn main() -> Result<()> {
 
         if !anumana_resolved {
             println!("No matching Anumana rule found for the observed state.");
+            if let Some(virodha) = virodha_blocks.first() {
+                println!("\nFallback to Kauṭilya Caturupāya resolution sequence...");
+                let outcome = glazier::conflict::upaya::UpayaResolver::resolve(virodha, &karma)?;
+                println!("Caturupāya Execution Outcome: {:?}", outcome);
+            }
         }
     }
 

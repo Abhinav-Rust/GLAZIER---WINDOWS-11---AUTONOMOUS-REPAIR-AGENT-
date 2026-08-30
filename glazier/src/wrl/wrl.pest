@@ -46,4 +46,4 @@ component = { ident ~ ("(" ~ ident ~ ")")? }
 
 action = { ident ~ ("(" ~ action_args? ~ ")")? }
 action_args = { action_arg ~ ("," ~ action_arg)* }
-action_arg = { action | string | integer }
+action_arg = { action | string | integer | ident }
